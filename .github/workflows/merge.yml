@@ -46,7 +46,6 @@ jobs:
       - name: Config Github files
         run: |
           git add .
-          git rm --cached .github/workflows/release.yml
           git commit -m "Automated Release ${{ env.VERSION }}" -a
           git push origin main -f
       - name: Create Repository Dispatch
