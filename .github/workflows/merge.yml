@@ -1,0 +1,62 @@
+name: Merge
+on:
+  repository_dispatch:
+    types: [ merge ]
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ macos-latest ]
+        node-version: [ 16.x ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - run: echo ${{ github.event.client_payload.ref }}
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: branch-match
+        with:
+          text: ${{ github.event.client_payload.ref }}
+          regex: '^refs\/tags\/(v\d+\.\d+).*$'
+      - name: Get Version
+        shell: bash -l {0}
+        run: |
+          version=${{steps.branch-match.outputs.group1}}
+          echo "VERSION=$version" >> $GITHUB_ENV
+      - run: echo ${{ env.VERSION }}
+      - name: Creating Private Key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal access token.
+          fetch-depth: 0 # otherwise, there would be errors pushing refs to the destination repository.
+      - name: Config Github Username
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Adding Upstream
+        run: |
+          git remote add upstream git@github.com:labsyspharm/minerva_analysis.git
+      - name: Fetching from Upstream
+        run: |
+          git fetch upstream
+      - name: Merging in Upstream
+        run: |
+          git merge upstream/visinity --allow-unrelated-histories  --strategy-option ours
+      - name: Config Github files
+        run: |
+          git add .
+          git rm --cached .github/workflows/elease.yml
+          git commit -m "Automated Release ${{ env.VERSION }}" -a
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+      - name: Create Repository Dispatch
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.REPO_PAT }}
+          repository: labsyspharm/Visinity
+          event-type: release
+          client-payload: '{"version": " ${{ env.VERSION }}"}'

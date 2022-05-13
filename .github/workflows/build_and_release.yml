@@ -1,0 +1,70 @@
+name: Build and Release
+on:
+  repository_dispatch:
+    types: [ release ]
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ macos-latest ]
+        node-version: [ 16.x ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Creating Private Key
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Node and Webpack
+        run: |
+          cd minerva_analysis
+          cd client
+          npm install
+          npm run start
+          cd ..
+          cd ..
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.8
+          environment-file: requirements.yml
+          activate-environment: visinity
+      - name: Package Windows
+        if: startsWith(matrix.os,'windows')
+        shell: cmd /C CALL {0}
+        run: |
+          package_win.bat
+      - name: Rename Windows
+        if: startsWith(matrix.os,'windows')
+        shell: bash -l {0}
+        run: |
+          ls dist/
+          mv dist/minerva_analysis_windows.exe "dist/Visinity_Windows_${{ github.event.client_payload.version }}.exe"
+          ls dist/
+      - name: Package Mac
+        if: startsWith(matrix.os,'mac')
+        shell: bash -l {0}
+        run: |
+          ./package_mac.sh
+      - name: Rename Mac
+        if: startsWith(matrix.os,'mac')
+        shell: bash -l {0}
+        run: |
+          mv dist/minerva_analysis_mac "dist/Visinity_Mac_${{ github.event.client_payload.version }}"
+          cd dist
+          zip "Visinity_Mac_${{ github.event.client_payload.version }}.zip" "Visinity_Mac_${{ github.event.client_payload.version }}"
+          rm "Visinity_Mac_${{ github.event.client_payload.version }}"
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.client_payload.version }}
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    

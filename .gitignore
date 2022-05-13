@@ -1,0 +1,49 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+*/node_modules
+static/frontend/node_modules
+*/client/node_modules/
+/.pnp
+.pnp.js
+*.sqlite3
+*.pclprof
+*/.ipynb_checkpoints/
+.ipynb_checkpoints/
+minerva_analysis/data/
+visinity/data/
+
+# testing
+/coverage
+/dist
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.idea/
+/data
+/data/
+minerva_analysis/data
+visinity/data
+
+/minerva_analysis//data
+/visinity//data
+
+/static/data
+/static/data/
+/__pycache__/
+/__pycache__/*
+*/__pycache__/*
+*__pycache__*
+*.pyc
