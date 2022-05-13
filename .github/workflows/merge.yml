@@ -44,6 +44,7 @@ jobs:
         run: |
           git merge upstream/visinity --allow-unrelated-histories  --strategy-option ours
       - name: Config Github files
+        continue-on-error: true
         run: |
           git commit -m "Automated Release ${{ env.VERSION }}" -a
       - name: Push changes
