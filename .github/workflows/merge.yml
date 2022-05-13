@@ -48,7 +48,7 @@ jobs:
           git add .
           git rm --cached .github/workflows/release.yml
           git commit -m "Automated Release ${{ env.VERSION }}" -a
-          git push origin master -f
+          git push origin main -f
       - name: Create Repository Dispatch
         uses: peter-evans/repository-dispatch@v2
         with:
