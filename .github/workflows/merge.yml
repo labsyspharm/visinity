@@ -46,7 +46,7 @@ jobs:
       - name: Config Github files
         run: |
           git add .
-          git rm --cached .github/workflows/elease.yml
+          git rm --cached .github/workflows/release.yml
           git commit -m "Automated Release ${{ env.VERSION }}" -a
       - name: Push changes
         uses: ad-m/github-push-action@master
