@@ -45,7 +45,7 @@ jobs:
         shell: bash -l {0}
         run: |
           ls dist/
-          mv dist/minerva_analysis_windows.exe "dist/Visinity_Windows_${{ github.event.client_payload.version }}.exe"
+          mv dist/minerva_analysis_windows.exe "dist/Visinity_Windows_${{github.event.client_payload.version}}.exe"
           ls dist/
       - name: Package Mac
         if: startsWith(matrix.os,'mac')
@@ -56,10 +56,10 @@ jobs:
         if: startsWith(matrix.os,'mac')
         shell: bash -l {0}
         run: |
-          mv dist/minerva_analysis_mac "dist/Visinity_Mac_${{ github.event.client_payload.version }}"
+          mv dist/minerva_analysis_mac "dist/Visinity_Mac_${{github.event.client_payload.version}}"
           cd dist
-          zip "Visinity_Mac_${{ github.event.client_payload.version }}.zip" "Visinity_Mac${{ github.event.client_payload.version }}"
-          rm "Visinity_Mac_${{ github.event.client_payload.version }}"
+          zip "Visinity_Mac_${{github.event.client_payload.version}}.zip" "Visinity_Mac${{github.event.client_payload.version}}"
+          rm "Visinity_Mac_${{github.event.client_payload.version}}"
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
