@@ -57,6 +57,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mv dist/minerva_analysis_mac "dist/Visinity_Mac_${{github.event.client_payload.version}}"
+          chmod +x "dist/Visinity_Mac_${{github.event.client_payload.version}}"
           cd dist
           zip "Visinity_Mac_${{github.event.client_payload.version}}.zip" "Visinity_Mac_${{github.event.client_payload.version}}"
           rm "Visinity_Mac_${{github.event.client_payload.version}}"
