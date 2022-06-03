@@ -93,6 +93,7 @@ body {
     /*height: 25vh; TODO SIMON*/
     height: 20vh;
     position: relative;
+    padding-bottom:5px;
     width: 100%;
 }
 

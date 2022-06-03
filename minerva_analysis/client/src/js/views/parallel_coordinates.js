@@ -86,10 +86,10 @@ class ParallelCoordinates {
         this.totalWidth = this.parent.node().getBoundingClientRect().width;
         this.totalHeight = this.parent.node().getBoundingClientRect().height;
         if (this.small) {
-            this.margin = {top: 10, right: 55, bottom: 10, left: 100};
+            this.margin = {top: 10, right: 55, bottom: 0, left: 100};
 
         } else {
-            this.margin = {top: 30, right: 55, bottom: 10, left: 120};
+            this.margin = {top: 30, right: 55, bottom: 0, left: 120};
         }
         this.width = this.parent.node().getBoundingClientRect().width - this.margin.left - this.margin.right,
             this.height = this.parent.node().getBoundingClientRect().height - this.margin.top - this.margin.bottom;
