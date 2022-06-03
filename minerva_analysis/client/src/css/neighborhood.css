@@ -488,7 +488,7 @@
 }
 
 .overall_line_label, .selection_line_label, .average_line_label {
-    font-weight: bold;
+    /*font-weight: bold;*/
 }
 
 #parallel_coordinates_display .parallel_axes text {
@@ -573,6 +573,7 @@
 }
 
 #heatmap-selection-label, #heatmap-overall-label {
+    font-size: 0.6rem;
     cursor: pointer;
 }
 
