@@ -210,7 +210,7 @@ body {
 
 #channel_list .active {
     background-color: #757575;
-    padding: 5px 2px 3px 2px;
+    padding: 2px 2px 3px 2px;
 }
 
 #channel_list .list-group {
