@@ -731,4 +731,3 @@ ParallelCoordinates.events = {
 function path(d, ctx) {
 
 };
-
