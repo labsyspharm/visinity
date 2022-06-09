@@ -14,6 +14,7 @@
     min-height: 95vh !important;
     margin-left: 0;
     padding-left: 0 !important;
+    max-width: 20vw;
 }
 
 #search-col-wrapper, #related_image_wrapper {
@@ -43,7 +44,7 @@
 }
 
 #multi_image_wrapper {
-    padding-left: 15vw;
+    padding-left: 20vw;
     padding-top: 5vh;
     display: none;
     overflow-y: scroll;
@@ -197,9 +198,9 @@
     width: 100%;
 }
 
-.compare_row {
-    margin-bottom: 50px;
-}
+/*.compare_row {*/
+/*    margin-bottom: 50px;*/
+/*}*/
 
 .compare_plot_body {
     height: 90%;
@@ -595,4 +596,8 @@
 
 #search-row .row {
     margin-left: 5px !important;
+}
+
+.heatmapHoverRect:active {
+    pointer-events: none;
 }
