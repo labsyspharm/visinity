@@ -64,7 +64,7 @@ jobs:
       - name: Create Repository Dispatch
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ secrets.REPO_PAT }}
-          repository: labsyspharm/Visinity
+          token: ${{ secrets.WORKFLOW_PAT }}
+          repository: labsyspharm/visinity
           event-type: release
           client-payload: '{"version": "${{env.VERSION}}"}'
