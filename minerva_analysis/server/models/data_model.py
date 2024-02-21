@@ -111,9 +111,11 @@ def load_datasource(datasource_name, reload=False):
     else:
         seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
         seg = zarr.open(seg_io.series[0].aszarr())
-    if seg.dtype.kind in 'f':
-        seg = seg.astype('uint32')
-    print('dt',seg.dtype)
+    print("DTypes per group:")
+    for _group in seg:
+        if seg[_group].dtype.kind in 'f':
+            seg[_group] = seg[_group].astype('uint32')
+        print(f" - '{_group}':\t{seg[_group].dtype}")
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
     metadata = get_ome_metadata(datasource_name)
     channels = zarr.open(channel_io.series[0].aszarr())
