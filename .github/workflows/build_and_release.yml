@@ -31,11 +31,13 @@ jobs:
           rm -r node_modules
           cd ..
           cd ..
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.9
           environment-file: requirements.yml
           activate-environment: visinity
+          auto-activate-base: false
+
       - name: Package Windows
         if: startsWith(matrix.os,'windows')
         shell: cmd /C CALL {0}
