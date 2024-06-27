@@ -3,7 +3,9 @@ from sklearn.neighbors import BallTree
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import MinMaxScaler
 from numba import prange
-
+import palom.pyramid
+import palom.reader
+import ome_types
 import math
 import hdbscan
 import numpy_indexed as npi
@@ -111,9 +113,11 @@ def load_datasource(datasource_name, reload=False):
     else:
         seg_io = tf.TiffFile(config[datasource_name]['segmentation'], is_ome=False)
         seg = zarr.open(seg_io.series[0].aszarr())
-    if seg.dtype.kind in 'f':
-        seg = seg.astype('uint32')
-    print('dt',seg.dtype)
+    try:
+        if seg.dtype.kind in 'f':
+            seg = seg.astype('uint32')
+    except:
+        pass
     channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
     metadata = get_ome_metadata(datasource_name)
     channels = zarr.open(channel_io.series[0].aszarr())
@@ -148,8 +152,7 @@ def load_csv(datasource_name, numpy=False):
     if 'celltype' in config[datasource_name]['featureData'][0]:
         df = df.rename(columns={config[datasource_name]['featureData'][0]['celltype']: 'phenotype'})
 
-    if np.issubdtype(df['phenotype'].dtype, np.number) is False:
-        df['phenotype'] = df['phenotype'].apply(lambda x: x.strip())
+    
 
     if 'celltypeData' in config[datasource_name]['featureData'][0]:
         cellTypePath = Path(config[datasource_name]['featureData'][0]['celltypeData'])
@@ -157,6 +160,7 @@ def load_csv(datasource_name, numpy=False):
         type_ids = [e[0] for e in type_list]
         type_string = [e[1].strip() for e in type_list]
         df['phenotype'] = df['phenotype'].replace(type_ids, type_string)
+
 
     df = df.replace(-np.Inf, 0)
     if numpy:
@@ -1422,19 +1426,47 @@ def get_ome_metadata(datasource_name):
     timer = time.time()
     if config is None:
         load_datasource(datasource_name)
+    
+    try:
+        channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
+        xml = channel_io.pages[0].tags['ImageDescription'].value
+        image_metadata = from_xml(xml).images[0].pixels
 
-    channel_io = tf.TiffFile(config[datasource_name]['channelFile'], is_ome=False)
-    xml = channel_io.pages[0].tags['ImageDescription'].value
-    image_metadata = from_xml(xml).images[0].pixels
-
-    print('Metadata Time', time.time() - timer)
+        print('Metadata Time', time.time() - timer)
+    except:
+        image_metadata = {}
     return image_metadata
 
+
+def detect_pixel_size(img_path):
+    try:
+        metadata = ome_types.from_tiff(img_path)
+        pixel_size = metadata.images[0].pixels.physical_size_x
+    except Exception as err:
+        print(err)
+        print()
+        print('Pixel size detection using ome-types failed')
+        pixel_size = 1
+    return pixel_size
 
 def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelImg=False):
     channel_info = {}
     channelNames = []
     if isLabelImg == False:
+        channel_io = tf.TiffFile(str(filePath), is_ome=False)
+        channels = zarr.open(channel_io.series[0].aszarr())
+
+        if isinstance(channels, zarr.Group) is False:
+            print('Convering to Pyramid')
+            pixel_size = detect_pixel_size(filePath)
+            directory = Path(dataDirectory + "/" + filePath.name)
+            readers = [palom.reader.OmePyramidReader(in_path) for in_path in [filePath]]
+            mosaics = [reader.pyramid[0] for reader in readers]
+            palom.pyramid.write_pyramid(
+                mosaics, directory, downscale_factor=2, pixel_size=pixel_size
+            )
+            filePath = directory
+            
         channel_io = tf.TiffFile(str(filePath), is_ome=False)
         channels = zarr.open(channel_io.series[0].aszarr())
         if isinstance(channels, zarr.Array):
@@ -1454,6 +1486,7 @@ def convertOmeTiff(filePath, channelFilePath=None, dataDirectory=None, isLabelIm
         channel_info['height'] = shape[1]
         channel_info['width'] = shape[2]
         channel_info['num_channels'] = shape[0]
+        channel_info['filePath'] = str(filePath)
         for i in range(shape[0]):
             channelName = re.sub(r'\.ome|\.tiff|\.tif|\.png', '', filePath.name) + "_" + str(i)
             channelNames.append(channelName)
@@ -1824,7 +1857,6 @@ def get_perm_data(datasource_name, matrix_paths):
     image_ball_tree = BallTree(points, metric='euclidean')
     print('P Ball Tree,', time.time() - test)
     test = time.time()
-    image_metadata = get_ome_metadata(datasource_name)
     print('P Metadata,', time.time() - test)
     test = time.time()
     if 'neighborhood_radius' in config[datasource_name]:
