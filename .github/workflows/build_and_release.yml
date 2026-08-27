@@ -1,7 +1,11 @@
 name: Build and Release
 on:
+  push:
+    tags:
+      - '*'
   repository_dispatch:
     types: [ release ]
+
 jobs:
   build:
     strategy:
@@ -10,27 +14,39 @@ jobs:
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
-      - run: echo ${{github.event.client_payload.version}}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.client_payload.version }}" ]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Building Visinity release: $VERSION"
+
       - name: Creating Private Key
-        uses: webfactory/ssh-agent@v0.5.3
+        uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+
       - name: Node and Webpack
         run: |
-          cd minerva_analysis
-          cd client
-          npm install
+          cd minerva_analysis/client
+          npm ci || npm install
           npm run start
-          rm -r node_modules
-          cd ..
-          cd ..
+          rm -rf node_modules
+          cd ../..
+
       - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.9
@@ -39,35 +55,38 @@ jobs:
           auto-activate-base: false
 
       - name: Package Windows
-        if: startsWith(matrix.os,'windows')
+        if: startsWith(matrix.os, 'windows')
         shell: cmd /C CALL {0}
         run: |
           package_win.bat
+
       - name: Rename Windows
-        if: startsWith(matrix.os,'windows')
+        if: startsWith(matrix.os, 'windows')
         shell: bash -l {0}
         run: |
           ls dist/
-          mv dist/minerva_analysis_windows.exe "dist/Visinity_Windows_${{github.event.client_payload.version}}.exe"
+          mv dist/minerva_analysis_windows.exe "dist/Visinity_Windows_${{ env.VERSION }}.exe"
           ls dist/
+
       - name: Package Mac
-        if: startsWith(matrix.os,'mac')
+        if: startsWith(matrix.os, 'mac')
         shell: bash -l {0}
         run: |
-          ./package_mac.sh Visinity_Mac_${{github.event.client_payload.version}}
+          ./package_mac.sh "Visinity_Mac_${{ env.VERSION }}"
+
       - name: Rename Mac
-        if: startsWith(matrix.os,'mac')
+        if: startsWith(matrix.os, 'mac')
         shell: bash -l {0}
         run: |
           cd dist
-          zip "Visinity_Mac_${{github.event.client_payload.version}}.zip" "Visinity_Mac_${{github.event.client_payload.version}}"
-          rm "Visinity_Mac_${{github.event.client_payload.version}}"
+          zip "Visinity_Mac_${{ env.VERSION }}.zip" "Visinity_Mac_${{ env.VERSION }}"
+          rm "Visinity_Mac_${{ env.VERSION }}"
+
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.client_payload.version }}
+          tag_name: ${{ env.VERSION }}
           files: |
             dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
