@@ -17,7 +17,7 @@ class ParallelCoordinates {
         this.labelPositions = {}
         this.order = {};
         this.dataLayer.defaultOrder.forEach((d, i) => {
-            this.order[d] = i;
+            if (d != null) this.order[d] = i;
         })
         this.reorder = false;
         this.logNormalize = false;
@@ -210,7 +210,7 @@ class ParallelCoordinates {
         })
 
         this.visData = _.filter(this.visData, elem => {
-            return elem.index !== -1; // Remove elements not in my order list
+            return elem.index !== -1 && elem.index != null; // Remove elements not in my order list
         });
 
 

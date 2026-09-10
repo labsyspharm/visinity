@@ -2027,12 +2027,15 @@ def calculate_axis_order(datasource_name, mode):
     below_index = starting_index
     below = True
     for i in range(starting_index):
-        # Final Iter
+        # Final Iter — fill empty slots only. For even n the pair loop already
+        # writes order[0], and the old order[0]/order[n-1] overwrite dropped a
+        # phenotype (left a None hole), so canvas remaps drifted while the named
+        # Selection Avg line stayed correct.
         if i == starting_index - 1:
             remaining_phenotypes = list(filter(lambda x: x is not None, phenotypes))
-            order[len(phenotypes) - 1] = remaining_phenotypes[0]
-            if len(phenotypes) % 2 == 0:
-                order[0] = remaining_phenotypes[1]
+            empty_slots = [j for j, x in enumerate(order) if x is None]
+            for slot, pheno in zip(empty_slots, remaining_phenotypes):
+                order[slot] = pheno
         else:
             top_corrs = np.argwhere(correlation_matrix.max() == correlation_matrix)[0]
             pair_one = top_corrs[0]
