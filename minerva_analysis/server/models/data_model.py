@@ -40,8 +40,19 @@ from scipy import spatial
 
 try:
     from pycave.bayes import gmm
-except ImportError:
+except Exception:
+    # Optional: full-matrix clustering only. Missing pycave or broken Windows torch
+    # (e.g. WinError 127 loading fbgemm.dll) must not block app startup.
     gmm = None
+
+
+def _neighborhood_gmm(num_clusters, subsample=True):
+    """sklearn GMM by default; pycave when available and subsample=False."""
+    if subsample or gmm is None:
+        if not subsample and gmm is None:
+            print('pycave/torch unavailable; using sklearn GMM for clustering')
+        return GaussianMixture(n_components=num_clusters)
+    return gmm.GaussianMixture(num_components=num_clusters)
 
 # from line_profiler_pycharm import profile
 
@@ -544,14 +555,7 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single', subsamp
         # neighborhoods = load_neighborhood_matrix(datasource_name)
         # pcaed = PCA(n_components=2).fit_transform(neighborhoods)
         # data = np.hstack((data, pcaed))
-        if subsample:
-            g_mixtures = GaussianMixture(n_components=num_clusters)
-        else:
-            if gmm is None:
-                raise ImportError(
-                    "pycave is required for subsample=False clustering; install with: uv pip install pycave"
-                )
-            g_mixtures = gmm.GaussianMixture(num_components=num_clusters)
+        g_mixtures = _neighborhood_gmm(num_clusters, subsample=subsample)
         g_mixtures.fit(data)
         clusters = np.array(g_mixtures.predict(data))
         for cluster in np.sort(np.unique(clusters)).astype(int).tolist():
@@ -595,14 +599,7 @@ def create_custom_clusters(datasource_name, num_clusters, mode='single', subsamp
         max_cluster_id = database_model.max(database_model.NeighborhoodStats, 'neighborhood_id')
         if max_cluster_id is None:
             max_cluster_id = 0
-        if subsample:
-            g_mixtures = GaussianMixture(n_components=num_clusters)
-        else:
-            if gmm is None:
-                raise ImportError(
-                    "pycave is required for subsample=False clustering; install with: uv pip install pycave"
-                )
-            g_mixtures = gmm.GaussianMixture(num_components=num_clusters)
+        g_mixtures = _neighborhood_gmm(num_clusters, subsample=subsample)
 
         pca = PCA(n_components=2).fit(combined_neighborhoods['full_neighborhoods'])
         pcaed = pca.transform(combined_neighborhoods['full_neighborhoods'])
